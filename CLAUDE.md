@@ -1,0 +1,37 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project overview
+
+Spendly is a Flask-based personal expense tracker built as a guided, step-by-step learning project. Routes and files contain markers like `# Step 1 — Database Setup` or `"coming in Step 3"` — these are intentional placeholders for a student to implement incrementally, not bugs to fix silently. When touching a stubbed route or file, implement it in line with what the marker/comment describes rather than assuming it's dead code.
+
+## Commands
+
+```bash
+# Setup
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+# Run the app (Flask dev server, debug mode, port 5001)
+python app.py
+
+# Run tests
+pytest
+```
+
+There is no lint/format tooling configured in this repo yet.
+
+## Architecture
+
+- **`app.py`** — single-file Flask app with all routes. Implemented: `/`, `/register`, `/login`, `/terms`, `/privacy` (GET only, render templates). Stubbed/unimplemented: `/logout`, `/profile`, `/expenses/add`, `/expenses/<id>/edit`, `/expenses/<id>/delete` — these currently return plain placeholder strings.
+- **`database/db.py`** — currently an empty stub (comment-only). Intended shape per the in-file comment: `get_db()` (SQLite connection with `row_factory` and foreign keys enabled), `init_db()` (creates tables with `CREATE TABLE IF NOT EXISTS`), `seed_db()` (inserts sample dev data). No schema exists yet.
+- **`database/__init__.py`** — empty.
+- **`templates/`** — Jinja2 templates. `base.html` defines the shared layout (navbar, footer, `{% block content %}`) and is extended by `landing.html`, `login.html`, `register.html`, `terms.html`, `privacy.html`.
+- **`static/css/style.css`** and **`static/js/main.js`** — shared frontend assets referenced via `url_for('static', ...)` in `base.html`.
+
+## Notable gaps to be aware of
+
+- `login.html` and `register.html` render forms that POST to `/login` and `/register` (fields: `name`, `email`, `password`), and both templates already handle an `error` template variable — but `app.py` only defines GET handlers for these routes. POST handling, password hashing, and session/auth logic are not yet implemented.
+- There is no user or expense database schema yet; both live entirely in `database/db.py`, which is currently unwritten.
