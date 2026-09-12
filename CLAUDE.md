@@ -25,13 +25,14 @@ There is no lint/format tooling configured in this repo yet.
 
 ## Architecture
 
-- **`app.py`** — single-file Flask app with all routes. Implemented: `/`, `/register`, `/login`, `/terms`, `/privacy` (GET only, render templates). Stubbed/unimplemented: `/logout`, `/profile`, `/expenses/add`, `/expenses/<id>/edit`, `/expenses/<id>/delete` — these currently return plain placeholder strings.
-- **`database/db.py`** — currently an empty stub (comment-only). Intended shape per the in-file comment: `get_db()` (SQLite connection with `row_factory` and foreign keys enabled), `init_db()` (creates tables with `CREATE TABLE IF NOT EXISTS`), `seed_db()` (inserts sample dev data). No schema exists yet.
+- **`app.py`** — single-file Flask app with all routes. Implemented: `/`, `/terms`, `/privacy` (GET only, render templates); `/register` and `/login` (GET renders the form, POST validates and processes it — see below). Stubbed/unimplemented: `/logout`, `/profile`, `/expenses/add`, `/expenses/<id>/edit`, `/expenses/<id>/delete` — these currently return plain placeholder strings.
+- **`database/db.py`** — implemented per the Step 1 spec: `get_db()` (SQLite connection with `row_factory` and foreign keys enabled), `init_db()` (creates `users`/`expenses` tables with `CREATE TABLE IF NOT EXISTS`), `seed_db()` (inserts one demo user + 8 sample expenses, idempotent). `init_db()`/`seed_db()` run at import time inside `app.app_context()` in `app.py`. DB file: `expense_tracker.db` in the project root (gitignored).
 - **`database/__init__.py`** — empty.
 - **`templates/`** — Jinja2 templates. `base.html` defines the shared layout (navbar, footer, `{% block content %}`) and is extended by `landing.html`, `login.html`, `register.html`, `terms.html`, `privacy.html`.
 - **`static/css/style.css`** and **`static/js/main.js`** — shared frontend assets referenced via `url_for('static', ...)` in `base.html`.
 
 ## Notable gaps to be aware of
 
-- `login.html` and `register.html` render forms that POST to `/login` and `/register` (fields: `name`, `email`, `password`), and both templates already handle an `error` template variable — but `app.py` only defines GET handlers for these routes. POST handling, password hashing, and session/auth logic are not yet implemented.
-- There is no user or expense database schema yet; both live entirely in `database/db.py`, which is currently unwritten.
+- `POST /register` and `POST /login` are implemented: server-side validation, duplicate-email check, `werkzeug.security` password hashing/verification, and on success `session["user_id"]`/`session["user_name"]` are set and the request redirects to `/profile`. On failure both re-render their form with the `error` variable. `app.secret_key` is a hardcoded dev value in `app.py` — move it to an env var before deploying.
+- `/logout` and `/profile` are still placeholder strings — session is created on login/register but nothing reads or clears it yet. That's the next step.
+- No per-request DB connection lifecycle yet (no `flask.g` caching or `app.teardown_appcontext`) — each route that touches the DB opens and closes its own connection via `get_db()`.
