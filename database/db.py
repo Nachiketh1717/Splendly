@@ -2,16 +2,25 @@ import os
 import sqlite3
 from datetime import date, timedelta
 
+from flask import g
 from werkzeug.security import generate_password_hash
 
 DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "expense_tracker.db")
 
 
 def get_db():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys = ON")
-    return conn
+    if "db" not in g:
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA foreign_keys = ON")
+        g.db = conn
+    return g.db
+
+
+def close_db(e=None):
+    db = g.pop("db", None)
+    if db is not None:
+        db.close()
 
 
 def init_db():
@@ -42,7 +51,6 @@ def init_db():
         """
     )
     conn.commit()
-    conn.close()
 
 
 def seed_db():
@@ -50,7 +58,6 @@ def seed_db():
 
     existing = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
     if existing > 0:
-        conn.close()
         return
 
     password_hash = generate_password_hash("demo123")
@@ -81,4 +88,3 @@ def seed_db():
     )
 
     conn.commit()
-    conn.close()

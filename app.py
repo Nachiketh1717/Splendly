@@ -1,10 +1,11 @@
 from flask import Flask, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from database.db import get_db, init_db, seed_db
+from database.db import close_db, get_db, init_db, seed_db
 
 app = Flask(__name__)
 app.secret_key = "dev-secret-key"  # dev only — move to an env var before deploying
+app.teardown_appcontext(close_db)
 
 with app.app_context():
     init_db()
